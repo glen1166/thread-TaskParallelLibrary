@@ -1,5 +1,6 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,28 +8,21 @@ public class Example
 {
    public static void Main()
    {
-      long totalSize = 0;
+        int[] nums = Enumerable.Range(0, 1000000).ToArray();
+        long total = 0;
 
-      String[] args = Environment.GetCommandLineArgs();
-      if (args.Length == 1) {
-         Console.WriteLine("There are no command line arguments.");
-         return;
-      }
-      if (! Directory.Exists(args[1])) {
-         Console.WriteLine("The directory does not exist.");
-         return;
-      }
+            // Use type parameter to make subtotal a long, not an int
+            Parallel.For<long>(0, nums.Length, () => 0, (j, loop, subtotal) =>
+            {
+                subtotal += nums[j];
+                return subtotal;
+            },
+                
+                (x) => Interlocked.Add(ref total, x)
+            );
 
-      String[] files = Directory.GetFiles(args[1]);
-      Parallel.For(0, files.Length,
-                   index => { FileInfo fi = new FileInfo(files[index]);
-                              long size = fi.Length;
-                              Interlocked.Add(ref totalSize, size);
-                   } );
-      Console.WriteLine("Directory '{0}':", args[1]);
-      Console.WriteLine("{0:N0} files, {1:N0} bytes", files.Length, totalSize);
+        Console.WriteLine("The total is {0:N0}", total);
+        Console.WriteLine("Press any key to exit");
+        Console.ReadKey();
    }
 }
-// The example displaysoutput like the following:
-//       Directory 'c:\windows\':
-//       32 files, 6,587,222 bytes
